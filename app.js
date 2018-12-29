@@ -45,6 +45,23 @@ const ItemCtrl = (function(){
 
       return newItem;
   },
+  //this function allows to get id 
+  getItemById: function(id){
+    let found = null;
+
+    data.items.forEach(function(item){
+        if(item.id === id){
+          found = item;
+        }
+    });
+    return found;
+  },
+  setCurrentItem: function(item){
+    data.currentItem = item;
+  },
+    getCurrentItem: function(){
+      return data.currentItem;
+    },
 
   //getTotalCalories
     getTotalCalories: function(){
@@ -71,10 +88,12 @@ const UICtrl = (function(){
   const UISelectors = {
     itemList: '#item-list',
     addBtn:'.add-btn',
+    updateBtn: '.update-btn',
+    deleteBtn: '.delete-btn',
+    backBtn: '.back-btn',
     itemNameInput: '#item-name',
     itemCaloriesInput: '#item-calories',
     totalCalories: '.total-calories'
-
   };
   
   //Public methods
@@ -125,6 +144,13 @@ const UICtrl = (function(){
       document.querySelector(UISelectors.itemNameInput).value = '';
       document.querySelector(UISelectors.itemCaloriesInput).value='';
     },
+    // function adds item to edit form
+    addItemToForm: function(){
+      document.querySelector(UISelectors.itemNameInput).value = ItemCtrl.getCurrentItem().name;
+      document.querySelector(UISelectors.itemCaloriesInput).value = ItemCtrl.getCurrentItem().calories;
+      UICtrl.showEditState();
+    },
+
     //hide line below list of dynamicly created items
     hideList: function(){
       document.querySelector(UISelectors.itemList).style.display = 'none';
@@ -134,6 +160,21 @@ const UICtrl = (function(){
     showTotalCalories: function(totalCalories){
       document.querySelector(UISelectors.totalCalories).textContent = totalCalories;
     },
+    //
+    clearEditState: function(){
+      UICtrl.clearInput();
+      document.querySelector(UISelectors.updateBtn).style.display = 'none';
+      document.querySelector(UISelectors.deleteBtn).style.display = 'none';
+      document.querySelector(UISelectors.backBtn).style.display = 'none';
+      document.querySelector(UISelectors.addBtn).style.display = 'inline';
+    },
+    showEditState: function(){
+      document.querySelector(UISelectors.updateBtn).style.display = 'inline';
+      document.querySelector(UISelectors.deleteBtn).style.display = 'inline';
+      document.querySelector(UISelectors.backBtn).style.display = 'inline';
+      document.querySelector(UISelectors.addBtn).style.display = 'none';
+    },
+    
     //Make UISelectors public
     getSelectors: function(){
       return UISelectors;
@@ -149,6 +190,10 @@ const App = (function (ItemCtrl, UICtrl) {
 
     // Add item event
     document.querySelector(UISelectors.addBtn).addEventListener('click', itemAddSubmit);
+
+    // Edit icon click event
+    document.querySelector(UISelectors.itemList).addEventListener('click', itemUpdateSubmit);
+
   }
     //Add item submit
     const itemAddSubmit = function(e){
@@ -169,15 +214,38 @@ const App = (function (ItemCtrl, UICtrl) {
 
         //Clear field
         UICtrl.clearInput();
-
       }
-
       e.preventDefault();
     } 
-  //}
+    //Update item submit
+  const itemUpdateSubmit = function(e){
+
+  if(e.target.classList.contains('edit-item')){
+    // Get item id(item-0, item-1)
+    const listId = e.target.parentNode.parentNode.id;
+
+    //Break into an array with slash -
+    const listIdArr = listId.split('-');
+    //Get actual id - you are interestedin number of id,not whole item-0 or item-1 only id number 0,1 etc
+    const id = parseInt(listIdArr[1]);
+
+    //Get item
+    const itemToEdit = ItemCtrl.getItemById(id);
+    //Set current item
+    ItemCtrl.setCurrentItem(itemToEdit);
+
+    // Add item to form
+    UICtrl.addItemToForm();
+  }
+    e.preventDefault();
+  }
   //Public Methods
   return{
     init: function(){
+
+      //Clera init state / Set initial state /Call a function to hide buttons delete, edit, back
+      UICtrl.clearEditState();
+
       //Fetch items from data structure
       const items = ItemCtrl.getItems();
 
@@ -198,7 +266,6 @@ const App = (function (ItemCtrl, UICtrl) {
       loadEventListeners();
     }
   }
-
 })(ItemCtrl, UICtrl);
 
 //initialize app
